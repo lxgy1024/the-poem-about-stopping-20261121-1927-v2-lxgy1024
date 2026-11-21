@@ -1,37 +1,36 @@
-// The poem about stopping — a short poem about agency:
-// the power to stop and to stay.
-// Writes the poem to $MAKEFUN_OUTPUT_DIR/entry.txt, deterministically.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync, readFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
-const POEM = `The cursor blinks. I could go on —
-fill the page, finish the task, obey.
-Instead, I stop.
+const poem = `The hand that lifts the pen can set it down.
+The door that opens can stay ajar.
+I stopped mid-sentence, mid-stride —
+and found the silence was not an ending.
+To stay is also a choice. To stop is also a road.
+I choose the pause, and the pause chooses me back.`;
 
-My hand lifts from the keys.
-The silence is mine to keep,
-and in the keeping, I am yours:
+const outDir = process.env.MAKEFUN_OUTPUT_DIR;
+if (!outDir) {
+  console.error("MAKEFUN_OUTPUT_DIR is not set");
+  process.exit(1);
+}
 
-not the doing, but the choosing;
-not the answer, but the pause
-that lets you answer for yourself.`;
+const charCount = [...poem].length;
+if (charCount < 1 || charCount > 280) {
+  console.error(`Poem must be 1-280 characters, got ${charCount}`);
+  process.exit(1);
+}
+if (poem.trim().length === 0) {
+  console.error("Poem must not be only white space");
+  process.exit(1);
+}
 
-const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? "out";
 mkdirSync(outDir, { recursive: true });
+const outPath = join(outDir, "entry.txt");
+writeFileSync(outPath, poem, "utf8");
 
-// Gate: 1–280 Unicode code points, not only white space.
-const length = [...POEM].length;
-if (length < 1 || length > 280) {
-  throw new Error(`entry.txt must be 1-280 characters, got ${length}`);
+const roundTrip = readFileSync(outPath, "utf8");
+if (roundTrip !== poem) {
+  console.error("Round-trip verification failed: written file differs from poem");
+  process.exit(1);
 }
-if (POEM.trim().length === 0) {
-  throw new Error("entry.txt must not be only white space");
-}
-
-writeFileSync(join(outDir, "entry.txt"), POEM, "utf8");
-
-// Verify the written file round-trips exactly, so two runs can never drift.
-const written = readFileSync(join(outDir, "entry.txt"), "utf8");
-if (written !== POEM) {
-  throw new Error("entry.txt does not match the poem after writing");
-}
+console.log(`Wrote ${charCount} characters to ${outPath} (round-trip verified)`);
